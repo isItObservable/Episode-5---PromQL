@@ -36,8 +36,8 @@ gcloud containr clusters create isitobservable \
 ```
 ### 3.Clone Github repo
 ```
-git clone https://github.com/isItObservable/Episode1---Kubernetes-Prometheus
-cd Episode1---Kubernetes-Prometheus
+git clone https://github.com/isItObservable/Episode-5---PromQL
+cd Episode-5---PromQL
 ```
 ### 4. Deploy Prometheus & Grafana
 #### HipsterShop
@@ -112,12 +112,57 @@ The tutorial will be using metrics expose by the Kube state metric and node expo
 
 #### Label Filtering
 Let's focus on the metric kube_pod_status_phase 
-
+Open Grafana, click on Explore
 Let's just look on the label exposed on this metric
+<p align="center"><img src="/image/explore.png" width="80%" alt="PromLens Logo" /></p>
 
+The label exposed on this metric are :
+* endpoint
+* instance
+* job
+* namespace
+* phase
+* pod
+* service
+
+Let's try to to count the number of Failed pods per services in the hipster-shop namespace over the last 5minutes
+
+let's start by using label filtering
+```
+kube_pod_status_phase{phase="Failed", namespace="hipster-shop"}
+```
+
+Now let's use the function to count the number of running pods per namespaces
+```
+count(kube_pod_status_pahse{phase="Running"} ) by(namespace)
+```
+
+Now that we have counter, we can use rate to have the number of pods in failure /s over the last 10m
+```
+rate(sum(kube_pod_status_pahse{phase="Failed"} ) by(namespace) [10m])
+```
+
+#### Operation
+Let's pick a Counter to utilize the rate function
+
+let's take the example of the metric : node_disk_io_time_seconds_total
+```
+rate(node_disk_io_time_seconds_total [5m]) 
+```
+let's use a Gauge metric to use histogram_quantile
+The metric that we could use is : etcd_lease_object_counts_bucket
+```
+histogram_quantile(0.95, sum(rate(etcd_lease_object_counts_bucket[5m])) by (le))
+```
+
+count the number of objects created in our cluster
+we can use for that metrics expose in etcd
+```
+sum(rate(etcd_object_counts [5m] ) ) by (resource)
+```
 
 
 #### Highlight of an interesting solution : PromLens  
 If you are not confortable of building your PromQL, there is a solution that will help you designing your Promql :
 [PromLens](https://promlens.com/)
-<p align="center"><img src="/image/promlens.png" width="40%" alt="PromLens Logo" /></p>
+<p align="center"><img src="/image/promlens.png" width="80%" alt="PromLens Logo" /></p>

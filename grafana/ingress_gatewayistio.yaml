@@ -2,7 +2,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
   name: grafana-gateway
-  namespace: default
+  namespace: istio-system
 spec:
   selector:
     istio: ingressgateway # use istio default controller
@@ -23,10 +23,10 @@ spec:
   hosts:
     - "*"
   gateways:
-    - grafana-gateway
+    - istio-system/grafana-gateway
   http:
     - route:
         - destination:
             host: prometheus-grafana
             port:
-              number: 3000
+              number: 80

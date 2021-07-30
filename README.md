@@ -114,7 +114,7 @@ The tutorial will be using metrics expose by the Kube state metric and node expo
 Let's focus on the metric kube_pod_status_phase 
 Open Grafana, click on Explore
 Let's just look on the label exposed on this metric
-<p align="center"><img src="/image/explore.png" width="80%" alt="PromLens Logo" /></p>
+<p align="center"><img src="/image/explore.PNG" width="80%" alt="PromLens Logo" /></p>
 
 The label exposed on this metric are :
 * endpoint

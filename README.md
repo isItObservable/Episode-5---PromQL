@@ -1,23 +1,30 @@
-# Is it Observable?
-<p align="center"><img src="/image/logo.png" width="40%" alt="Prometheus Logo" /></p>
+# How to build a PromQL (Prometheus Query Language)
+
+This repository is here to guide you through the GitHub tutorial that goes hand-in-hand with a video available on YouTube and a detailed blog post on my website. 
+Together, these resources are designed to give you a complete understanding of the topic.
+
+Here are the links to the related assets:
+- YouTube Video: [How to build a PromQL (Prometheus Query Language)](https://www.youtube.com/watch?v=hvACEDjHQZE)
+- Blog Post: [How to build a PromQL (Prometheus Query Language](https://isitobservable.io/observability/prometheus/how-to-build-a-promql-prometheus-query-language)
+
+Feel free to explore the materials, star the repository, and follow along at your own pace.
+
 
 ## PromQL tutorial
 <p align="center"><img src="/image/k8sprom.png" width="40%" alt="Prometheus Logo" /></p>
-Repository containing the files for the Episode 5 of Is it Observable : PromQL
+
+This repository showcases the usage of Prometheus by using GKE with the HipsterShop
 
 
-This repository showcase the usage of the Prometheus  by using GKE with :
-- the HipsterShop
-
-
-## Prerequisite
-The following tools need to be install on your machine :
+## Prerequisites
+The following tools need to be installed on your machine :
 - jq
 - kubectl
 - git
-- gcloud ( if you are using GKE)
+- gcloud (if you're using GKE)
 - Helm
-### 1.Create a Google Cloud Platform Project
+  
+### 1. Create a Google Cloud Platform Project
 ```
 PROJECT_ID="<your-project-id>"
 gcloud services enable container.googleapis.com --project ${PROJECT_ID}
@@ -27,19 +34,19 @@ clouddebugger.googleapis.com \
 cloudprofiler.googleapis.com \
 --project ${PROJECT_ID}
 ```
-### 2.Create a GKE cluster
+### 2. Create a GKE cluster
 ```
 ZONE=us-central1-b
-gcloud containr clusters create isitobservable \
+gcloud container clusters create isitobservable \
 --project=${PROJECT_ID} --zone=${ZONE} \
 --machine-type=e2-standard-2 --num-nodes=4
 ```
-### 3.Clone Github repo
+### 3.Clone the GitHub repo
 ```
 git clone https://github.com/isItObservable/Episode-5---PromQL
 cd Episode-5---PromQL
 ```
-### 4. Deploy Prometheus & Grafana
+### 4. Deploy Prometheus and Grafana
 #### HipsterShop
 ```
 cd hipstershop
@@ -89,7 +96,7 @@ spec:
 status:
   loadBalancer: {}
 ```
-Deploy the ingress by making sure to replace the service name of your grafan
+Deploy the ingress by making sure to replace the service name of your Grafana
 ```
 cd ..\grafana
 kubectl apply -f ingress.yaml
@@ -103,20 +110,20 @@ kubectl get secret --namespace default prometheus-grafana -o jsonpath="{.data.ad
 ```
 kubectl get secret --namespace default prometheus-grafana -o jsonpath="{.data.admin-user}" | base64 --decode
 ```
-Get the ip adress of your Grafana
+Get the IP address of your Grafana
 ```
 kubectl get ingress grafana-ingress -ojson | jq  '.status.loadBalancer.ingress[].ip'
 ```
 ### 5. Tutorial on PromQL
-The tutorial will be using metrics expose by the Kube state metric and node exporter.
+The tutorial will be using metrics exposed by the Kube state metric and node exporter.
 
 #### Label Filtering
 Let's focus on the metric kube_pod_status_phase 
-Open Grafana, click on Explore
-Let's just look on the label exposed on this metric
+Open Grafana, click Explore
+Let's just look at the label exposed on this metric
 <p align="center"><img src="/image/explore.PNG" width="80%" alt="PromLens Logo" /></p>
 
-The label exposed on this metric are :
+The labels exposed on this metric are :
 * endpoint
 * instance
 * job
@@ -125,19 +132,19 @@ The label exposed on this metric are :
 * pod
 * service
 
-Let's try to to count the number of Failed pods per services in the hipster-shop namespace over the last 5minutes
+Let's try to count the number of failed pods per service in the hipster-shop namespace over the last 5 minutes
 
-let's start by using label filtering
+Let's start by using label filtering
 ```
 kube_pod_status_phase{phase="Failed", namespace="hipster-shop"}
 ```
 
-Now let's use the function to count the number of running pods per namespaces
+Now let's use the function to count the number of running pods per namespace
 ```
 count(kube_pod_status_pahse{phase="Running"} ) by(namespace)
 ```
 
-Now that we have counter, we can use rate to have the number of pods in failure /s over the last 10m
+Now that we have a counter, we can use the rate to have the number of pods in failure/s over the last 10m
 ```
 rate(sum(kube_pod_status_pahse{phase="Failed"} ) by(namespace) [10m])
 ```
@@ -145,24 +152,24 @@ rate(sum(kube_pod_status_pahse{phase="Failed"} ) by(namespace) [10m])
 #### Operation
 Let's pick a Counter to utilize the rate function
 
-let's take the example of the metric : node_disk_io_time_seconds_total
+Let's take the example of the metric: node_disk_io_time_seconds_total
 ```
 rate(node_disk_io_time_seconds_total [5m]) 
 ```
-let's use a Gauge metric to use histogram_quantile
-The metric that we could use is : etcd_lease_object_counts_bucket
+Let's use a Gauge metric to use histogram_quantile
+The metric that we could use is: etcd_lease_object_counts_bucket
 ```
 histogram_quantile(0.95, sum(rate(etcd_lease_object_counts_bucket[5m])) by (le))
 ```
 
-count the number of objects created in our cluster
-we can use for that metrics expose in etcd
+Count the number of objects created in our cluster
+For that, we can use metrics exposed in etcd
 ```
 sum(rate(etcd_object_counts [5m] ) ) by (resource)
 ```
 
 
-#### Highlight of an interesting solution : PromLens  
-If you are not confortable of building your PromQL, there is a solution that will help you designing your Promql :
+#### Highlight of an interesting solution: PromLens  
+If you're not comfortable building your PromQL, there is a solution that will help you design your PromQL:
 [PromLens](https://promlens.com/)
 <p align="center"><img src="/image/promlens.png" width="80%" alt="PromLens Logo" /></p>
